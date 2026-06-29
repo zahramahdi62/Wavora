@@ -1,0 +1,168 @@
+# 🎛️ Real-Time Audio Equalizer
+
+A real-time, multi-band audio equalizer with a live spectrum visualizer, built in Python using `sounddevice`, `numpy`, `scipy`, and a `Tkinter` GUI. Audio captured from your microphone is processed frame-by-frame in the frequency domain and played back through your speakers with adjustable per-band gain — all in real time.
+
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+
+---
+
+## ✨ Features
+
+- 🎚️ **5-band parametric equalizer** — Sub Bass, Bass, Mid, Upper Mid, Treble (±12 dB per band)
+- 🔊 **Real-time processing** — low-latency mic-to-speaker pipeline using FFT-based filtering
+- 📈 **Live spectrum visualizer** — logarithmic-scale frequency plot with peak-hold, rendered with `matplotlib` inside the Tkinter window
+- 🎼 **Built-in & custom presets** — Flat, Rock, Pop, Jazz, Classical, Voice, plus the ability to save your own as JSON
+- 🧹 **Spectral noise reduction** — basic noise-profile subtraction module (`NoiseReducer`)
+- 🖥️ **Simple GUI** — start/stop streaming, drag sliders, switch presets, all from one window
+
+---
+
+## 🧠 How It Works
+
+The signal chain for every audio block is:
+
+```
+Microphone → Windowing (Hann) → FFT → Noise Reduction → Per-Band Gain → IFFT (Overlap-Add) → Speaker
+```
+
+| Component | Responsibility |
+|---|---|
+| `AudioStream` | Opens the bidirectional mic/speaker stream via `sounddevice` and drives the real-time audio callback |
+| `FFTProcessor` | Converts time-domain blocks to the frequency domain (FFT) and reconstructs audio using Overlap-Add (OLA) |
+| `Equalizer` | Maps FFT bins to frequency bands and applies independent linear gain per band |
+| `NoiseReducer` | Estimates a noise profile and subtracts it from the spectrum |
+| `PresetManager` | Loads/saves equalizer presets as JSON files |
+| `SpectrumVisualizer` | Renders the live frequency spectrum with peak-hold inside the GUI |
+| `EqualizerGUI` | Builds the Tkinter interface and wires all components together |
+| `main()` | Entry point — checks for audio devices and launches the GUI |
+
+### DSP Parameter Choices
+
+| Parameter | Value | Why |
+|---|---|---|
+| Sample rate | 44,100 Hz | CD-quality, covers the full 20 Hz–20 kHz hearing range |
+| Block size | 1024 samples (~23 ms) | Low latency while keeping CPU overhead per callback low |
+| FFT size | 2048 (zero-padded) | Doubles frequency resolution (~21.5 Hz/bin) for more accurate low-band gain mapping |
+| Window | Hann | Suppresses spectral leakage from chopping a continuous signal into blocks |
+| Overlap | 50% (hop = 512) | Satisfies the constant-overlap-add (COLA) condition for Hann windows, avoiding amplitude ripple |
+
+### Frequency Bands
+
+| Band | Range |
+|---|---|
+| Sub Bass | 20 – 60 Hz |
+| Bass | 60 – 250 Hz |
+| Mid | 250 – 2,000 Hz |
+| Upper Mid | 2,000 – 4,000 Hz |
+| Treble | 4,000 – 20,000 Hz |
+
+---
+
+## 📦 Requirements
+
+- Python 3.9+
+- A working microphone and speakers/headphones
+- A system audio backend supported by [PortAudio](http://www.portaudio.com/) (used internally by `sounddevice`)
+
+### Dependencies
+
+```
+numpy
+scipy
+sounddevice
+matplotlib
+```
+
+> ⚠️ On Linux, you may need to install PortAudio system libraries first:
+> ```bash
+> sudo apt-get install libportaudio2 portaudio19-dev
+> ```
+
+---
+
+## 🚀 Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
+
+# (Recommended) Create a virtual environment
+python -m venv venv
+source venv/bin/activate      # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install numpy scipy sounddevice matplotlib
+```
+
+---
+
+## ▶️ Usage
+
+Run the application:
+
+```bash
+python equalizer.py
+```
+
+> Replace `equalizer.py` with the actual filename of the script.
+
+1. Click **▶ Start** to begin streaming audio from your microphone to your speakers.
+2. Drag the vertical sliders to boost or cut each frequency band (±12 dB).
+3. Watch the live spectrum update in real time.
+4. Click a preset button (Flat, Rock, Pop, Jazz, Classical, Voice) to instantly apply a gain profile.
+5. Click **Save current status...** to store your current slider settings as a new named preset.
+6. Click **■ Stop** to stop the audio stream.
+
+> ⚠️ **Headphones recommended.** Routing live microphone input to speakers can cause audio feedback (a loud howling loop) if the mic picks up the speaker output.
+
+---
+
+## 💾 Presets
+
+Presets are stored as JSON files in a `presets/` folder created automatically next to the script. Built-in presets (`Flat`, `Rock`, `Pop`, `Jazz`, `Classical`, `Voice`) are generated on first run. Each preset file looks like:
+
+```json
+{
+  "Sub Bass": 4,
+  "Bass": 3,
+  "Mid": -2,
+  "Upper Mid": 2,
+  "Treble": 4
+}
+```
+
+You can edit these files directly or create new ones via the GUI's "Save current status..." button.
+
+---
+
+## 📁 Project Structure
+
+```
+.
+├── equalizer.py        # Main application (all classes + entry point)
+├── presets/             # Auto-generated preset JSON files
+└── README.md
+```
+
+---
+
+## 🛠️ Known Limitations
+
+- **Mono only** — input/output is processed as a single channel for simplicity.
+- **Possible feedback loop** — using speakers (instead of headphones) while monitoring live mic input can cause howling.
+- **Noise reduction is basic** — `NoiseReducer` uses simple spectral subtraction; no calibration UI is currently wired into the GUI.
+
+---
+
+## 🤝 Contributing
+
+Contributions, bug reports, and feature requests are welcome! Feel free to open an issue or submit a pull request.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
