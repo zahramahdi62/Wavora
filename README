@@ -86,7 +86,7 @@ matplotlib
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/<your-repo>.git
+git clone https://github.com/zahramahdi62/<your-repo>.git
 cd <your-repo>
 
 # (Recommended) Create a virtual environment
